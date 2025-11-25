@@ -119,9 +119,12 @@
       margin-top: 8px;
     }
     .custom-query-section {
-      margin-top: 40px;
-      padding-top: 32px;
-      border-top: 2px solid #e0e0e0;
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+      margin-bottom: 40px;
+      padding-bottom: 32px;
+      border-bottom: 2px solid #e0e0e0;
     }
     .custom-query-section h2 {
       font-size: 18px;
@@ -175,20 +178,11 @@
     </nav>
 
     <h1>Interactive Query Comparison</h1>
-    <p class="subtitle">Execute real queries and see the differences between Redis and MongoDB</p>
+    <p class="subtitle">Execute real queries in MongoDB</p>
     
     <button class="init-button" onclick="initializeData()" id="initBtn">Initialize Sample Data</button>
     
     <div class="status" id="status"></div>
-
-    <div class="query-buttons">
-      <button onclick="runQuery('get-by-id')">Get by ID</button>
-      <button onclick="runQuery('range-query')">Range Query (age 43-79)</button>
-      <button onclick="runQuery('sort')">Sort by Score</button>
-      <button onclick="runQuery('aggregate')">Aggregate the Scores by City</button>
-    </div>
-    
-    <div id="results"></div>
 
     <div class="custom-query-section">
       <h2>Custom MongoDB Query</h2>
@@ -217,7 +211,9 @@
       </div>
 
       <button onclick="runCustomQuery()">Execute Custom Query</button>
-    </div>
+    </div>    
+    <div id="results"></div>
+      
   </div>
 
   <script>
@@ -231,7 +227,7 @@
       try {
         const response = await fetch('/api/init-data', { method: 'POST' });
         await response.json();
-        status.textContent = 'Data initialized. Click a query button to test.';
+        status.textContent = 'Data initialized.';
       } catch (error) {
         status.textContent = 'Error: ' + error.message;
       }
