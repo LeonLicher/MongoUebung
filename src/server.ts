@@ -4,7 +4,7 @@ import path from 'path';
 import WebSocket from 'ws';
 import { LeaderElection } from './leaderElection';
 import { runPerformanceBenchmark } from './performanceBenchmark';
-import { executeCustomQuery, executeQuery, initializeData } from './queryCapabilities';
+import { executeCustomQuery, executeQuery, initializeData, insertDocument } from './queryCapabilities';
 import { WriteConcerns } from './writeConcerns';
 
 const app = express();
@@ -52,6 +52,17 @@ app.post('/api/custom-query', async (req: Request, res: Response) => {
   try {
     const { filter, sort, limit } = req.body;
     const result = await executeCustomQuery(filter, sort, limit);
+    res.json(result);
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/insert-document', async (req: Request, res: Response) => {
+  try {
+    const { document } = req.body;
+    const result = await insertDocument(document);
     res.json(result);
   } catch (error) {
     const err = error as Error;

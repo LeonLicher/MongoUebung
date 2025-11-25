@@ -181,3 +181,30 @@ export async function executeCustomQuery(filter: any, sort: any, limit: number |
     };
   }
 }
+
+export async function insertDocument(document: any): Promise<QueryResult> {
+  const { collection, mongoClient } = await getClients();
+  
+  try {
+    const startTime = Date.now();
+    
+    const result = await collection.insertOne(document);
+    
+    await mongoClient.close();
+    
+    return {
+      success: true,
+      result: {
+        insertedId: result.insertedId,
+        acknowledged: result.acknowledged
+      },
+      executionTime: Date.now() - startTime
+    };
+  } catch (error: any) {
+    await mongoClient.close();
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}

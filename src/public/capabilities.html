@@ -166,6 +166,16 @@
       border-radius: 2px;
       font-family: 'Courier New', monospace;
     }
+    .insert-section {
+      margin-top: 40px;
+      padding-top: 32px;
+      border-top: 2px solid #e0e0e0;
+    }
+    .insert-section h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
   </style>
 </head>
 <body>
@@ -177,7 +187,7 @@
 
     </nav>
 
-    <h1>Interactive Query Comparison</h1>
+    <h1>Interactive Query</h1>
     <p class="subtitle">Execute real queries in MongoDB</p>
     
     <button class="init-button" onclick="initializeData()" id="initBtn">Initialize Sample Data</button>
@@ -213,6 +223,22 @@
       <button onclick="runCustomQuery()">Execute Custom Query</button>
     </div>    
     <div id="results"></div>
+
+    <div class="insert-section">
+      <h2>Insert Document</h2>
+      <p class="subtitle">Add a new user to the collection</p>
+      
+      <div class="query-input-container">
+        <label>Document (JSON object):</label>
+        <textarea id="insertDocument" placeholder='{"name": "Torben"....'>{}</textarea>
+        <div class="example-queries">
+          Examples: 
+          <code>{"name": "Torben"....</code>
+        </div>
+      </div>
+
+      <button onclick="insertDocument()">Insert Document</button>
+    </div>
       
   </div>
 
@@ -325,6 +351,57 @@
               <div class="result-header">Error</div>
               <div class="result-body">
                 <div class="error">✗ Invalid JSON or query error: ${error.message}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    async function insertDocument() {
+      const status = document.getElementById('status');
+      const results = document.getElementById('results');
+      
+      status.textContent = 'Inserting document...';
+      
+      try {
+        const documentText = document.getElementById('insertDocument').value || '{}';
+        const documentObj = JSON.parse(documentText);
+
+        const response = await fetch('/api/insert-document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ document: documentObj })
+        });
+        
+        const data = await response.json();
+        
+        status.textContent = 'Insert completed';
+        
+        results.innerHTML = `
+          <div class="results">
+            <div class="result-panel" style="grid-column: 1 / -1;">
+              <div class="result-header">Insert Document Result</div>
+              <div class="result-body">
+                ${data.success ? `
+                  <div class="success">✓ Document inserted successfully</div>
+                  <pre>${JSON.stringify(data.result, null, 2)}</pre>
+                  <div class="exec-time">Execution time: ${data.executionTime}ms</div>
+                ` : `
+                  <div class="error">✗ ${data.error}</div>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        status.textContent = 'Error: ' + error.message;
+        results.innerHTML = `
+          <div class="results">
+            <div class="result-panel" style="grid-column: 1 / -1;">
+              <div class="result-header">Error</div>
+              <div class="result-body">
+                <div class="error">✗ Invalid JSON or insert error: ${error.message}</div>
               </div>
             </div>
           </div>
