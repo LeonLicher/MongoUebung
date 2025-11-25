@@ -1,7 +1,7 @@
 import { MongoClient } from 'mongodb';
 import { createClient } from 'redis';
 
-const OPERATIONS = 10000;
+const OPERATIONS = 1000;
 
 interface BenchmarkResult {
   database: string;

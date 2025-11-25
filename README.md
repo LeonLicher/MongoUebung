@@ -19,4 +19,4 @@ That's it. No Node.js or other dependencies needed on your machine.
 
 ## What it does
 
-Compares 10,000 write and read operations between Redis and MongoDB.
+Compares 1,000 write and read operations between Redis and MongoDB.

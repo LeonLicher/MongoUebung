@@ -327,11 +327,20 @@
         
         status.textContent = 'Custom query completed';
         
+        // Build the command string for display
+        let commandString = `db.collection('users').find(${JSON.stringify(filter)})`;
+        if (sort !== null) {
+          commandString += `.sort(${JSON.stringify(sort)})`;
+        }
+        
         results.innerHTML = `
           <div class="results">
             <div class="result-panel" style="grid-column: 1 / -1;">
               <div class="result-header">MongoDB Custom Query Result</div>
               <div class="result-body">
+                <div style="margin-bottom: 12px; padding: 8px; background: #f0f0f0; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px;">
+                  <strong>Command:</strong> ${commandString}
+                </div>
                 ${data.success ? `
                   <div class="success">✓ Success - Found ${Array.isArray(data.result) ? data.result.length : 1} document(s)</div>
                   <pre>${JSON.stringify(data.result, null, 2)}</pre>
@@ -378,11 +387,17 @@
         
         status.textContent = 'Insert completed';
         
+        // Build the command string for display
+        const commandString = `db.collection('users').insertOne(${JSON.stringify(documentObj, null, 2)})`;
+        
         results.innerHTML = `
           <div class="results">
             <div class="result-panel" style="grid-column: 1 / -1;">
               <div class="result-header">Insert Document Result</div>
               <div class="result-body">
+                <div style="margin-bottom: 12px; padding: 8px; background: #f0f0f0; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; white-space: pre-wrap;">
+                  <strong>Command:</strong> ${commandString}
+                </div>
                 ${data.success ? `
                   <div class="success">✓ Document inserted successfully</div>
                   <pre>${JSON.stringify(data.result, null, 2)}</pre>
