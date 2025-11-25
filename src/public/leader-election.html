@@ -276,9 +276,9 @@
     
     /* Write Concerns Section */
     .write-concerns-section {
-      margin-top: 60px;
-      padding-top: 40px;
-      border-top: 2px solid #e0e0e0;
+      margin-bottom: 60px;
+      padding-bottom: 40px;
+      border-bottom: 2px solid #e0e0e0;
     }
     
     .write-concerns-section h2 {
@@ -316,12 +316,6 @@
     
     .mongo-node.acknowledged {
       box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
-      animation: pulse 0.5s ease-in-out;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
     }
     
     .mongo-node-header {
@@ -415,35 +409,6 @@
 
     </nav>
 
-    <h1>Leader Election Demonstration</h1>
-    <p class="subtitle">Watch how distributed nodes elect a leader using MongoDB or Redis</p>
-    
-    <div class="controls">
-      <div class="toggle-container">
-        <button class="toggle-btn active" id="mongoToggle" onclick="switchDatabase('mongodb')">MongoDB</button>
-        <button class="toggle-btn" id="redisToggle" onclick="switchDatabase('redis')">Redis</button>
-      </div>
-      
-      <button class="success" onclick="startElection()" id="startBtn">Start Election</button>
-      <button onclick="resetElection()" id="resetBtn">Reset</button>
-      <button class="danger" onclick="simulateRandomCrash()" id="crashBtn">Simulate Leader Crash</button>
-    </div>
-    
-    <div class="status" id="status">Select a database and click "Start Election" to begin</div>
-    
-    <div class="nodes-container" id="nodesContainer">
-      <!-- Nodes will be dynamically generated -->
-    </div>
-    
-    <div class="event-log">
-      <div class="event-log-header">Event Log</div>
-      <div class="event-log-body" id="eventLog">
-        <div style="padding: 20px; text-align: center; color: #999; font-size: 13px;">
-          No events yet. Start an election to see activity.
-        </div>
-      </div>
-    </div>
-
     <!-- Write Concerns Section -->
     <div class="write-concerns-section">
       <h2>MongoDB Write Concerns</h2>
@@ -513,6 +478,35 @@
       </div>
 
       <div id="writeResults"></div>
+    </div>
+
+    <h1>Leader Election Demonstration</h1>
+    <p class="subtitle">Watch how distributed nodes elect a leader using MongoDB or Redis</p>
+    
+    <div class="controls">
+      <div class="toggle-container">
+        <button class="toggle-btn active" id="mongoToggle" onclick="switchDatabase('mongodb')">MongoDB</button>
+        <button class="toggle-btn" id="redisToggle" onclick="switchDatabase('redis')">Redis</button>
+      </div>
+      
+      <button class="success" onclick="startElection()" id="startBtn">Start Election</button>
+      <button onclick="resetElection()" id="resetBtn">Reset</button>
+      <button class="danger" onclick="simulateRandomCrash()" id="crashBtn">Simulate Leader Crash</button>
+    </div>
+    
+    <div class="status" id="status">Select a database and click "Start Election" to begin</div>
+    
+    <div class="nodes-container" id="nodesContainer">
+      <!-- Nodes will be dynamically generated -->
+    </div>
+    
+    <div class="event-log">
+      <div class="event-log-header">Event Log</div>
+      <div class="event-log-body" id="eventLog">
+        <div style="padding: 20px; text-align: center; color: #999; font-size: 13px;">
+          No events yet. Start an election to see activity.
+        </div>
+      </div>
     </div>
   </div>
   
