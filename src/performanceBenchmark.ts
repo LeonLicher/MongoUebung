@@ -48,15 +48,17 @@ export async function runPerformanceBenchmark(): Promise<BenchmarkResult[]> {
     opsPerSec: Math.round(OPERATIONS / duration)
   });
 
-  // MongoDB Write
+  // MongoDB Bulk Write
   start = Date.now();
+  const docs = [];
   for (let i = 0; i < OPERATIONS; i++) {
-    await collection.insertOne({ key: i, value: `value:${i}` });
+    docs.push({ key: i, value: `value:${i}` });
   }
+  await collection.insertMany(docs);
   duration = (Date.now() - start) / 1000;
   results.push({
     database: 'MongoDB',
-    operation: 'Write',
+    operation: 'Bulk Write',
     duration,
     opsPerSec: Math.round(OPERATIONS / duration)
   });
