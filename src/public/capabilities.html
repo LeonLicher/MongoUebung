@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Query Capabilities - Database Comparison</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #ffffff;
+      color: #1a1a1a;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+    nav {
+      margin-bottom: 32px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    nav a {
+      color: #1a1a1a;
+      text-decoration: none;
+      margin-right: 24px;
+      font-size: 14px;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    .query-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    button {
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      padding: 12px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: 500;
+      text-align: left;
+    }
+    button:hover {
+      background: #333;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .init-button {
+      background: #059669;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .init-button:hover {
+      background: #047857;
+    }
+    .status {
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: #666;
+    }
+    .results {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .result-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .result-header {
+      background: #f5f5f5;
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .result-body {
+      padding: 16px;
+      font-size: 13px;
+    }
+    .error {
+      color: #dc2626;
+    }
+    .success {
+      color: #059669;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 12px;
+      border-radius: 3px;
+      overflow-x: auto;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .exec-time {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+    }
+    .custom-query-section {
+      margin-top: 40px;
+      padding-top: 32px;
+      border-top: 2px solid #e0e0e0;
+    }
+    .custom-query-section h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .query-input-container {
+      margin-bottom: 16px;
+    }
+    .query-input-container label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #666;
+    }
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      resize: vertical;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #1a1a1a;
+    }
+    .example-queries {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+    }
+    .example-queries code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 2px;
+      font-family: 'Courier New', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="/capabilities.html">Query</a>
+      <a href="/leader-election.html">Leader</a>
+      <a href="/">Performance</a>
+
+    </nav>
+
+    <h1>Interactive Query Comparison</h1>
+    <p class="subtitle">Execute real queries and see the differences between Redis and MongoDB</p>
+    
+    <button class="init-button" onclick="initializeData()" id="initBtn">Initialize Sample Data</button>
+    
+    <div class="status" id="status"></div>
+
+    <div class="query-buttons">
+      <button onclick="runQuery('get-by-id')">Get by ID</button>
+      <button onclick="runQuery('range-query')">Range Query (age 43-79)</button>
+      <button onclick="runQuery('sort')">Sort by Score</button>
+      <button onclick="runQuery('aggregate')">Aggregate the Scores by City</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <div class="custom-query-section">
+      <h2>Custom MongoDB Query</h2>
+      <p class="subtitle">MongoDB uses JSON-based queries, not SQL. Write a filter object to query the 'users' collection.</p>
+      
+      <div class="query-input-container">
+        <label>Filter (JSON object):</label>
+        <textarea id="customFilter" placeholder='{ "age": { "$gt": 50 } }'>{}</textarea>
+        <div class="example-queries">
+          Examples: 
+          <code>{ "city": "Berlin" }</code> | 
+          <code>{ "age": { "$gte": 60, "$lte": 80 } }</code> | 
+          <code>{ "name": { "$regex": "Money" } }</code>
+        </div>
+      </div>
+
+      <div class="query-input-container">
+        <label>Sort (optional, JSON object):</label>
+        <textarea id="customSort" placeholder='{ "age": -1 }'>null</textarea>
+        <div class="example-queries">
+          Examples: 
+          <code>{ "age": 1 }</code> (ascending) | 
+          <code>{ "age": -1 }</code> (descending) | 
+          <code>{ "city": 1, "age": -1 }</code>
+        </div>
+      </div>
+
+      <button onclick="runCustomQuery()">Execute Custom Query</button>
+    </div>
+  </div>
+
+  <script>
+    async function initializeData() {
+      const btn = document.getElementById('initBtn');
+      const status = document.getElementById('status');
+      
+      btn.disabled = true;
+      status.textContent = 'Initializing data...';
+      
+      try {
+        const response = await fetch('/api/init-data', { method: 'POST' });
+        await response.json();
+        status.textContent = 'Data initialized. Click a query button to test.';
+      } catch (error) {
+        status.textContent = 'Error: ' + error.message;
+      }
+      
+      btn.disabled = false;
+    }
+
+    async function runQuery(queryType) {
+      const status = document.getElementById('status');
+      const results = document.getElementById('results');
+      
+      status.textContent = 'Executing query...';
+      
+      try {
+        const response = await fetch('/api/query/' + queryType);
+        const data = await response.json();
+        
+        status.textContent = 'Query completed';
+        
+        results.innerHTML = `
+          <div class="results">
+            <div class="result-panel">
+              <div class="result-header">Redis</div>
+              <div class="result-body">
+                ${data.redis.success ? `
+                  <div class="success">✓ Success</div>
+                  <pre>${JSON.stringify(data.redis.result, null, 2)}</pre>
+                  <div class="exec-time">Execution time: ${data.redis.executionTime}ms</div>
+                ` : `
+                  <div class="error">✗ ${data.redis.error}</div>
+                `}
+              </div>
+            </div>
+            <div class="result-panel">
+              <div class="result-header">MongoDB</div>
+              <div class="result-body">
+                ${data.mongodb.success ? `
+                  <div class="success">✓ Success</div>
+                  <pre>${JSON.stringify(data.mongodb.result, null, 2)}</pre>
+                  <div class="exec-time">Execution time: ${data.mongodb.executionTime}ms</div>
+                ` : `
+                  <div class="error">✗ ${data.mongodb.error}</div>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        status.textContent = 'Error: ' + error.message;
+      }
+    }
+
+    async function runCustomQuery() {
+      const status = document.getElementById('status');
+      const results = document.getElementById('results');
+      
+      status.textContent = 'Executing custom query...';
+      
+      try {
+        const filter = JSON.parse(document.getElementById('customFilter').value || '{}');
+        const sort = JSON.parse(document.getElementById('customSort').value || 'null');
+        const limit = 100;
+
+        const response = await fetch('/api/custom-query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filter, sort, limit })
+        });
+        
+        const data = await response.json();
+        
+        status.textContent = 'Custom query completed';
+        
+        results.innerHTML = `
+          <div class="results">
+            <div class="result-panel" style="grid-column: 1 / -1;">
+              <div class="result-header">MongoDB Custom Query Result</div>
+              <div class="result-body">
+                ${data.success ? `
+                  <div class="success">✓ Success - Found ${Array.isArray(data.result) ? data.result.length : 1} document(s)</div>
+                  <pre>${JSON.stringify(data.result, null, 2)}</pre>
+                  <div class="exec-time">Execution time: ${data.executionTime}ms</div>
+                ` : `
+                  <div class="error">✗ ${data.error}</div>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        status.textContent = 'Error: ' + error.message;
+        results.innerHTML = `
+          <div class="results">
+            <div class="result-panel" style="grid-column: 1 / -1;">
+              <div class="result-header">Error</div>
+              <div class="result-body">
+                <div class="error">✗ Invalid JSON or query error: ${error.message}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>

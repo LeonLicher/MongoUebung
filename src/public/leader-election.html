@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leader Election - Database Comparison</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #ffffff;
+      color: #1a1a1a;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+    nav {
+      margin-bottom: 32px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    nav a {
+      color: #1a1a1a;
+      text-decoration: none;
+      margin-right: 24px;
+      font-size: 14px;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .toggle-container {
+      display: flex;
+      gap: 8px;
+      padding: 4px;
+      background: #f5f5f5;
+      border-radius: 6px;
+    }
+    
+    .toggle-btn {
+      padding: 8px 16px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #666;
+    }
+    
+    .toggle-btn.active {
+      background: #1a1a1a;
+      color: #fff;
+    }
+    
+    button {
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    
+    button:hover {
+      background: #333;
+    }
+    
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    button.danger {
+      background: #dc2626;
+    }
+    
+    button.danger:hover {
+      background: #b91c1c;
+    }
+    
+    button.success {
+      background: #059669;
+    }
+    
+    button.success:hover {
+      background: #047857;
+    }
+    
+    .status {
+      font-size: 14px;
+      color: #666;
+      padding: 12px 16px;
+      background: #f5f5f5;
+      border-radius: 4px;
+      margin-bottom: 24px;
+    }
+    
+    .nodes-container {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    
+    .node {
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s ease;
+      background: #fff;
+    }
+    
+    .node.leader {
+      border-color: #059669;
+      background: #f0fdf4;
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+    }
+    
+    .node.competing {
+      border-color: #f59e0b;
+      background: #fffbeb;
+    }
+    
+    .node.follower {
+      border-color: #e0e0e0;
+      background: #fafafa;
+    }
+    
+    .node.crashed {
+      border-color: #dc2626;
+      background: #fef2f2;
+      opacity: 0.6;
+    }
+    
+    .node-header {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    
+    .node-status {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .node.leader .node-status {
+      color: #059669;
+      font-weight: 600;
+    }
+    
+    .node.competing .node-status {
+      color: #f59e0b;
+      font-weight: 600;
+    }
+    
+    .node.crashed .node-status {
+      color: #dc2626;
+      font-weight: 600;
+    }
+    
+    .node-lease {
+      font-size: 11px;
+      color: #999;
+      margin-top: 8px;
+    }
+    
+    .node-actions {
+      margin-top: 12px;
+    }
+    
+    .node-actions button {
+      padding: 6px 12px;
+      font-size: 11px;
+      width: 100%;
+    }
+    
+    .event-log {
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .event-log-header {
+      background: #f5f5f5;
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 14px;
+      border-bottom: 1px solid #e0e0e0;
+      position: sticky;
+      top: 0;
+    }
+    
+    .event-log-body {
+      padding: 8px;
+    }
+    
+    .event {
+      padding: 8px 12px;
+      font-size: 12px;
+      border-left: 3px solid #e0e0e0;
+      margin-bottom: 6px;
+      background: #fafafa;
+    }
+    
+    .event.election {
+      border-left-color: #f59e0b;
+      background: #fffbeb;
+    }
+    
+    .event.leader-change {
+      border-left-color: #059669;
+      background: #f0fdf4;
+    }
+    
+    .event.crash {
+      border-left-color: #dc2626;
+      background: #fef2f2;
+    }
+    
+    .event-time {
+      color: #999;
+      font-size: 11px;
+      margin-right: 8px;
+    }
+    
+    .connection-status {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .connection-status.connected {
+      background: #f0fdf4;
+      color: #059669;
+      border: 1px solid #059669;
+    }
+    
+    .connection-status.disconnected {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #dc2626;
+    }
+    
+    /* Write Concerns Section */
+    .write-concerns-section {
+      margin-top: 60px;
+      padding-top: 40px;
+      border-top: 2px solid #e0e0e0;
+    }
+    
+    .write-concerns-section h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .mongo-nodes-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 32px 0;
+    }
+    
+    .mongo-node {
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s ease;
+      background: #fff;
+      position: relative;
+    }
+    
+    .mongo-node.primary {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+    
+    .mongo-node.secondary {
+      border-color: #10b981;
+      background: #f0fdf4;
+    }
+    
+    .mongo-node.acknowledged {
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+      animation: pulse 0.5s ease-in-out;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .mongo-node-header {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    
+    .mongo-node-role {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+    
+    .mongo-node.primary .mongo-node-role {
+      color: #3b82f6;
+      font-weight: 600;
+    }
+    
+    .mongo-node.secondary .mongo-node-role {
+      color: #10b981;
+      font-weight: 600;
+    }
+    
+    .ack-badge {
+      display: inline-block;
+      background: #22c55e;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    
+    .write-concern-controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    
+    .write-concern-btn {
+      flex: 1;
+      min-width: 150px;
+    }
+    
+    .write-results {
+      background: #f5f5f5;
+      border-radius: 4px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+    
+    .write-results h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 13px;
+    }
+    
+    .metric:last-child {
+      border-bottom: none;
+    }
+    
+    .metric-label {
+      color: #666;
+    }
+    
+    .metric-value {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="/capabilities.html">Query</a>
+      <a href="/leader-election.html">Leader</a>
+      <a href="/">Performance</a>
+
+    </nav>
+
+    <h1>Leader Election Demonstration</h1>
+    <p class="subtitle">Watch how distributed nodes elect a leader using MongoDB or Redis</p>
+    
+    <div class="controls">
+      <div class="toggle-container">
+        <button class="toggle-btn active" id="mongoToggle" onclick="switchDatabase('mongodb')">MongoDB</button>
+        <button class="toggle-btn" id="redisToggle" onclick="switchDatabase('redis')">Redis</button>
+      </div>
+      
+      <button class="success" onclick="startElection()" id="startBtn">Start Election</button>
+      <button onclick="resetElection()" id="resetBtn">Reset</button>
+      <button class="danger" onclick="simulateRandomCrash()" id="crashBtn">Simulate Leader Crash</button>
+    </div>
+    
+    <div class="status" id="status">Select a database and click "Start Election" to begin</div>
+    
+    <div class="nodes-container" id="nodesContainer">
+      <!-- Nodes will be dynamically generated -->
+    </div>
+    
+    <div class="event-log">
+      <div class="event-log-header">Event Log</div>
+      <div class="event-log-body" id="eventLog">
+        <div style="padding: 20px; text-align: center; color: #999; font-size: 13px;">
+          No events yet. Start an election to see activity.
+        </div>
+      </div>
+    </div>
+
+    <!-- Write Concerns Section -->
+    <div class="write-concerns-section">
+      <h2>MongoDB Write Concerns</h2>
+      <p class="subtitle">See how write acknowledgment requirements affect performance across replica set nodes</p>
+      
+      <div class="mongo-nodes-container" id="mongoNodesContainer">
+        <div class="mongo-node primary" id="mongo-node-1">
+          <div class="mongo-node-header">mongo1</div>
+          <div class="mongo-node-role">Primary</div>
+          <div class="mongo-node-status">Ready</div>
+        </div>
+        <div class="mongo-node secondary" id="mongo-node-2">
+          <div class="mongo-node-header">mongo2</div>
+          <div class="mongo-node-role">Secondary</div>
+          <div class="mongo-node-status">Ready</div>
+        </div>
+        <div class="mongo-node secondary" id="mongo-node-3">
+          <div class="mongo-node-header">mongo3</div>
+          <div class="mongo-node-role">Secondary</div>
+          <div class="mongo-node-status">Ready</div>
+        </div>
+        <div class="mongo-node secondary" id="mongo-node-4">
+          <div class="mongo-node-header">mongo4</div>
+          <div class="mongo-node-role">Secondary</div>
+          <div class="mongo-node-status">Ready</div>
+        </div>
+        <div class="mongo-node secondary" id="mongo-node-5">
+          <div class="mongo-node-header">mongo5</div>
+          <div class="mongo-node-role">Secondary</div>
+          <div class="mongo-node-status">Ready</div>
+        </div>
+        <div class="mongo-node secondary" id="mongo-node-6">
+          <div class="mongo-node-header">mongo6</div>
+          <div class="mongo-node-role">Secondary</div>
+          <div class="mongo-node-status">Ready</div>
+        </div>
+        <div class="mongo-node secondary" id="mongo-node-7">
+          <div class="mongo-node-header">mongo7</div>
+          <div class="mongo-node-role">Secondary</div>
+          <div class="mongo-node-status">Ready</div>
+        </div>
+        <div class="mongo-node secondary" id="mongo-node-8">
+          <div class="mongo-node-header">mongo8</div>
+          <div class="mongo-node-role">Secondary</div>
+          <div class="mongo-node-status">Ready</div>
+        </div>
+        <div class="mongo-node secondary" id="mongo-node-9">
+          <div class="mongo-node-header">mongo9</div>
+          <div class="mongo-node-role">Secondary</div>
+          <div class="mongo-node-status">Ready</div>
+        </div>
+      </div>
+
+      <div class="write-concern-controls">
+        <button class="write-concern-btn" onclick="testWriteConcern('w1')">
+          Test w:1 (Primary Only)
+        </button>
+        <button class="write-concern-btn" onclick="testWriteConcern('w3')">
+          Test w:3 (Primary + 2 Secondaries)
+        </button>
+        <button class="write-concern-btn" onclick="testWriteConcern('w5')">
+          Test w:5 (Primary + 4 Secondaries)
+        </button>
+        <button class="write-concern-btn" onclick="testWriteConcern('majority')">
+          Test w:"majority" (5 of 9 nodes)
+        </button>
+      </div>
+
+      <div id="writeResults"></div>
+    </div>
+  </div>
+  
+  <div class="connection-status disconnected" id="connectionStatus">
+    ● Disconnected
+  </div>
+
+  <script>
+    let ws = null;
+    let currentDatabase = 'mongodb';
+    let nodes = [];
+    const NUM_NODES = 5;
+    
+    function initializeNodes() {
+      const container = document.getElementById('nodesContainer');
+      container.innerHTML = '';
+      nodes = [];
+      
+      for (let i = 1; i <= NUM_NODES; i++) {
+        const nodeId = `node-${i}`;
+        nodes.push({
+          id: nodeId,
+          status: 'follower',
+          lease: null
+        });
+        
+        const nodeEl = document.createElement('div');
+        nodeEl.className = 'node follower';
+        nodeEl.id = nodeId;
+        nodeEl.innerHTML = `
+          <div class="node-header">Node ${i}</div>
+          <div class="node-status">Idle</div>
+          <div class="node-lease"></div>
+          <div class="node-actions">
+            <button onclick="crashNode('${nodeId}')">Crash This Node</button>
+          </div>
+        `;
+        container.appendChild(nodeEl);
+      }
+    }
+    
+    function connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${window.location.host}`);
+      
+      ws.onopen = () => {
+        updateConnectionStatus(true);
+        addEvent('system', 'WebSocket connected');
+      };
+      
+      ws.onclose = () => {
+        updateConnectionStatus(false);
+        addEvent('system', 'WebSocket disconnected');
+        setTimeout(connectWebSocket, 3000);
+      };
+      
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+      
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        handleWebSocketMessage(data);
+      };
+    }
+    
+    function handleWebSocketMessage(data) {
+      switch (data.type) {
+        case 'node-update':
+          updateNode(data.nodeId, data.status, data.lease);
+          break;
+        case 'election-started':
+          addEvent('election', `Election started for ${data.database}`);
+          document.getElementById('status').textContent = `Election in progress...`;
+          break;
+        case 'leader-elected':
+          addEvent('leader-change', `${data.nodeId} elected as leader`);
+          document.getElementById('status').textContent = `Leader: ${data.nodeId}`;
+          break;
+        case 'leader-lost':
+          addEvent('leader-change', `${data.nodeId} lost leadership`);
+          break;
+        case 'node-crashed':
+          addEvent('crash', `${data.nodeId} crashed`);
+          updateNode(data.nodeId, 'crashed', null);
+          break;
+        case 'election-reset':
+          addEvent('system', 'Election reset');
+          document.getElementById('status').textContent = 'Election reset. Click "Start Election" to begin';
+          initializeNodes();
+          break;
+        case 'write-concern-result':
+          handleWriteConcernResult(data);
+          break;
+      }
+    }
+    
+    function updateNode(nodeId, status, lease) {
+      const nodeEl = document.getElementById(nodeId);
+      if (!nodeEl) return;
+      
+      nodeEl.className = `node ${status}`;
+      
+      const statusEl = nodeEl.querySelector('.node-status');
+      statusEl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+      
+      const leaseEl = nodeEl.querySelector('.node-lease');
+      if (lease && status === 'leader') {
+        leaseEl.textContent = `Lease expires: ${new Date(lease).toLocaleTimeString()}`;
+      } else {
+        leaseEl.textContent = '';
+      }
+    }
+    
+    function updateConnectionStatus(connected) {
+      const statusEl = document.getElementById('connectionStatus');
+      if (connected) {
+        statusEl.className = 'connection-status connected';
+        statusEl.textContent = '● Connected';
+      } else {
+        statusEl.className = 'connection-status disconnected';
+        statusEl.textContent = '● Disconnected';
+      }
+    }
+    
+    function addEvent(type, message) {
+      const logBody = document.getElementById('eventLog');
+      
+      // Remove placeholder if it exists
+      if (logBody.children.length === 1 && logBody.children[0].style.textAlign === 'center') {
+        logBody.innerHTML = '';
+      }
+      
+      const eventEl = document.createElement('div');
+      eventEl.className = `event ${type}`;
+      const time = new Date().toLocaleTimeString();
+      eventEl.innerHTML = `<span class="event-time">${time}</span>${message}`;
+      
+      logBody.insertBefore(eventEl, logBody.firstChild);
+      
+      // Keep only last 50 events
+      while (logBody.children.length > 50) {
+        logBody.removeChild(logBody.lastChild);
+      }
+    }
+    
+    function switchDatabase(db) {
+      currentDatabase = db;
+      
+      document.getElementById('mongoToggle').classList.remove('active');
+      document.getElementById('redisToggle').classList.remove('active');
+      
+      if (db === 'mongodb') {
+        document.getElementById('mongoToggle').classList.add('active');
+      } else {
+        document.getElementById('redisToggle').classList.add('active');
+      }
+      
+      resetElection();
+    }
+    
+    function startElection() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert('WebSocket not connected. Please wait...');
+        return;
+      }
+      
+      ws.send(JSON.stringify({
+        action: 'start-election',
+        database: currentDatabase
+      }));
+    }
+    
+    function resetElection() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        initializeNodes();
+        return;
+      }
+      
+      ws.send(JSON.stringify({
+        action: 'reset-election'
+      }));
+    }
+    
+    function crashNode(nodeId) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert('WebSocket not connected. Please wait...');
+        return;
+      }
+      
+      ws.send(JSON.stringify({
+        action: 'crash-node',
+        nodeId: nodeId
+      }));
+    }
+    
+    function simulateRandomCrash() {
+      const activeNodes = nodes.filter(n => n.status !== 'crashed');
+      if (activeNodes.length === 0) {
+        alert('All nodes are crashed!');
+        return;
+      }
+      
+      const randomNode = activeNodes[Math.floor(Math.random() * activeNodes.length)];
+      crashNode(randomNode.id);
+    }
+    
+    // Initialize on load
+    initializeNodes();
+    connectWebSocket();
+
+    // Write Concerns Functions
+    async function testWriteConcern(concernType) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert('WebSocket not connected. Please wait...');
+        return;
+      }
+
+      // Clear previous acknowledgments
+      document.querySelectorAll('.mongo-node').forEach(node => {
+        node.classList.remove('acknowledged');
+        const badge = node.querySelector('.ack-badge');
+        if (badge) badge.remove();
+      });
+
+      ws.send(JSON.stringify({
+        action: 'test-write-concern',
+        concernType: concernType
+      }));
+    }
+
+    function handleWriteConcernResult(data) {
+      // Highlight acknowledged nodes
+      data.acknowledgedNodes.forEach(nodeNum => {
+        const nodeEl = document.getElementById(`mongo-node-${nodeNum}`);
+        if (nodeEl) {
+          nodeEl.classList.add('acknowledged');
+          const badge = document.createElement('div');
+          badge.className = 'ack-badge';
+          badge.textContent = '✓ ACK';
+          nodeEl.appendChild(badge);
+
+          // Remove highlight after 2 seconds
+          setTimeout(() => {
+            nodeEl.classList.remove('acknowledged');
+            badge.remove();
+          }, 2000);
+        }
+      });
+
+      // Display results
+      const resultsDiv = document.getElementById('writeResults');
+      resultsDiv.innerHTML = `
+        <div class="write-results">
+          <h3>Write Result - ${data.concernLabel}</h3>
+          <div class="metric">
+            <span class="metric-label">Write Concern:</span>
+            <span class="metric-value">${data.concernType}</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Execution Time:</span>
+            <span class="metric-value">${data.executionTime}ms</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Nodes Acknowledged:</span>
+            <span class="metric-value">${data.acknowledgedNodes.length} of 9</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Document Inserted:</span>
+            <span class="metric-value">ID ${data.documentId}</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Status:</span>
+            <span class="metric-value" style="color: #22c55e;">✓ Success</span>
+          </div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  mongo1:
+    image: mongo:latest
+    container_name: showcase-mongo1
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27017:27017"
+    healthcheck:
+      # Initiate replica set with at most 7 voting members (MongoDB limit).
+      # Use mongo1..mongo7 as the configured members; mongo8/9 can remain standalone
+      # or be added later as non-voting members if desired.
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo1:27017'},{_id:1,host:'mongo2:27017'},{_id:2,host:'mongo3:27017'},{_id:3,host:'mongo4:27017'},{_id:4,host:'mongo5:27017'},{_id:5,host:'mongo6:27017'},{_id:6,host:'mongo7:27017'}]}) }" | mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    
+  mongo2:
+    image: mongo:latest
+    container_name: showcase-mongo2
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27018:27017"
+    
+  mongo3:
+    image: mongo:latest
+    container_name: showcase-mongo3
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27019:27017"
+
+  mongo4:
+    image: mongo:latest
+    container_name: showcase-mongo4
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27020:27017"
+
+  mongo5:
+    image: mongo:latest
+    container_name: showcase-mongo5
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27021:27017"
+
+  mongo6:
+    image: mongo:latest
+    container_name: showcase-mongo6
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27022:27017"
+
+  mongo7:
+    image: mongo:latest
+    container_name: showcase-mongo7
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27023:27017"
+
+  mongo8:
+    image: mongo:latest
+    container_name: showcase-mongo8
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27024:27017"
+
+  mongo9:
+    image: mongo:latest
+    container_name: showcase-mongo9
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27025:27017"
+    
+  redis:
+    image: redis:latest
+    container_name: showcase-redis
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: showcase-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: pass
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+    depends_on:
+      mongo1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8081"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  app:
+    build: .
+    container_name: showcase-app
+    ports:
+      - "3000:3000"
+    depends_on:
+      mongo1:
+        condition: service_healthy
+      mongo2:
+        condition: service_started
+      mongo3:
+        condition: service_started
+      mongo4:
+        condition: service_started
+      mongo5:
+        condition: service_started
+      mongo6:
+        condition: service_started
+      mongo7:
+        condition: service_started
+      mongo8:
+        condition: service_started
+      mongo9:
+        condition: service_started
+      redis:
+        condition: service_started
